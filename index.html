@@ -3,14 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日记工具</title>
+    <title>日记本</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 认证模态框 -->
+    <div id="authModal" class="auth-modal active">
+        <div class="auth-container">
+            <h2 id="authTitle">登录</h2>
+            <div class="auth-form">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" placeholder="请输入密码">
+                </div>
+                <button id="authBtn" class="auth-btn">登录</button>
+                <p class="auth-switch">
+                    <span id="switchAuth">没有账号？点击注册</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- 日记列表区域 -->
         <div class="diary-list-container">
-            <h1>我的日记</h1>
+            <div class="header">
+                <h1>我的日记</h1>
+                <button id="logoutBtn" class="logout-btn">退出登录</button>
+            </div>
             <div id="diaryList" class="diary-list"></div>
         </div>
 
