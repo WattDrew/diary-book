@@ -45,7 +45,9 @@ async function sendDiary() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-auth-token': token
+                'x-auth-token': token,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
             },
             body: JSON.stringify({ content })
         });
@@ -71,7 +73,9 @@ async function fetchDiaries() {
     try {
         const response = await fetch(`${API_URL}/diaries`, {
             headers: {
-                'x-auth-token': token
+                'x-auth-token': token,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
             }
         });
         
@@ -178,7 +182,9 @@ async function handleAuth() {
         const response = await fetch(`${API_URL}/auth/${endpoint}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
             },
             body: JSON.stringify({
                 username: usernameValue,
