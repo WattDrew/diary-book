@@ -20,8 +20,24 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "api/$1"
+      "src": "/api/auth/login",
+      "dest": "api/auth/login.js"
+    },
+    {
+      "src": "/api/auth/register",
+      "dest": "api/auth/register.js"
+    },
+    {
+      "src": "/api/diaries",
+      "dest": "api/diaries/index.js"
+    },
+    {
+      "src": "/api/diaries/(.+)",
+      "dest": "api/diaries/[id].js"
+    },
+    {
+      "src": "/api/test",
+      "dest": "api/test.js"
     },
     {
       "src": "/(.*)",
