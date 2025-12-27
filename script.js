@@ -1,5 +1,10 @@
+// 应用状态
+let isLoginMode = true;
+let token = localStorage.getItem('token');
+let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
 // 日记数据存储
-let diaries = JSON.parse(localStorage.getItem('diaries')) || [];
+let diaries = [];
 
 // DOM元素
 const diaryInput = document.getElementById('diaryInput');
@@ -10,30 +15,82 @@ const closeDetail = document.getElementById('closeDetail');
 const detailDate = document.getElementById('detailDate');
 const detailContent = document.getElementById('detailContent');
 
+// 认证DOM元素
+const authModal = document.getElementById('authModal');
+const authTitle = document.getElementById('authTitle');
+const username = document.getElementById('username');
+const password = document.getElementById('password');
+const authBtn = document.getElementById('authBtn');
+const switchAuth = document.getElementById('switchAuth');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// API基础URL
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://diary-tool.vercel.app/api';
+
 // 初始化页面
-renderDiaryList();
+if (token && currentUser) {
+    fetchDiaries();
+    authModal.classList.remove('active');
+} else {
+    setupAuthEventListeners();
+}
 
 // 发送日记
-function sendDiary() {
+async function sendDiary() {
     const content = diaryInput.value.trim();
     if (content === '') return;
     
-    const diary = {
-        id: Date.now(),
-        content: content,
-        timestamp: new Date()
-    };
-    
-    diaries.unshift(diary); // 新日记添加到最前面
-    saveDiaries();
-    renderDiaryList();
-    diaryInput.value = '';
-    diaryInput.focus();
+    try {
+        const response = await fetch(`${API_URL}/diaries`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-auth-token': token
+            },
+            body: JSON.stringify({ content })
+        });
+        
+        if (response.ok) {
+            const newDiary = await response.json();
+            diaries.unshift(newDiary);
+            renderDiaryList();
+            diaryInput.value = '';
+            diaryInput.focus();
+        } else {
+            const error = await response.json();
+            alert(error.msg || '发送日记失败');
+        }
+    } catch (error) {
+        console.error('发送日记错误:', error);
+        alert('网络错误，请稍后重试');
+    }
 }
 
-// 保存日记到localStorage
-function saveDiaries() {
-    localStorage.setItem('diaries', JSON.stringify(diaries));
+// 从API获取日记列表
+async function fetchDiaries() {
+    try {
+        const response = await fetch(`${API_URL}/diaries`, {
+            headers: {
+                'x-auth-token': token
+            }
+        });
+        
+        if (response.ok) {
+            diaries = await response.json();
+            renderDiaryList();
+        } else {
+            // 认证失败，清除本地存储
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser');
+            token = null;
+            currentUser = null;
+            authModal.classList.add('active');
+            setupAuthEventListeners();
+        }
+    } catch (error) {
+        console.error('获取日记错误:', error);
+        alert('网络错误，请稍后重试');
+    }
 }
 
 // 渲染日记列表
@@ -46,7 +103,7 @@ function renderDiaryList() {
         emptyMsg.innerHTML = `
             <div style="text-align: center; padding: 40px 20px; color: #999;">
                 <div style="font-size: 48px; margin-bottom: 10px;">📝</div>
-                <p>还没有日记，快来写第一篇吧！</p>
+                <p>还没有日记，今天有遇到什么有趣的事吗！</p>
             </div>
         `;
         diaryList.appendChild(emptyMsg);
@@ -72,9 +129,102 @@ function renderDiaryList() {
 
 // 显示日记详情
 function showDetail(diary) {
-    detailDate.textContent = formatDetailTime(diary.timestamp);
+    detailDate.textContent = formatDetailTime(diary.createdAt);
     detailContent.textContent = diary.content;
     detailSidebar.classList.add('active');
+}
+
+// 设置认证事件监听器
+function setupAuthEventListeners() {
+    // 切换登录/注册模式
+    switchAuth.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        authTitle.textContent = isLoginMode ? '登录' : '注册';
+        authBtn.textContent = isLoginMode ? '登录' : '注册';
+        switchAuth.innerHTML = isLoginMode ? 
+            '没有账号？点击注册' : 
+            '已有账号？点击登录';
+    });
+    
+    // 认证按钮点击
+    authBtn.addEventListener('click', handleAuth);
+    
+    // 回车键认证
+    username.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            password.focus();
+        }
+    });
+    
+    password.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleAuth();
+        }
+    });
+}
+
+// 处理登录/注册
+async function handleAuth() {
+    const usernameValue = username.value.trim();
+    const passwordValue = password.value.trim();
+    
+    if (!usernameValue || !passwordValue) {
+        alert('请填写所有字段');
+        return;
+    }
+    
+    try {
+        const endpoint = isLoginMode ? 'login' : 'register';
+        const response = await fetch(`${API_URL}/auth/${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: usernameValue,
+                password: passwordValue
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            token = data.token;
+            currentUser = data.user;
+            
+            // 保存到本地存储
+            localStorage.setItem('token', token);
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // 关闭认证模态框，加载日记
+            authModal.classList.remove('active');
+            fetchDiaries();
+            setupAppEventListeners();
+            
+            // 清空表单
+            username.value = '';
+            password.value = '';
+        } else {
+            const error = await response.json();
+            alert(error.msg || (isLoginMode ? '登录失败' : '注册失败'));
+        }
+    } catch (error) {
+        console.error('认证错误:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 设置应用事件监听器
+function setupAppEventListeners() {
+    // 退出登录
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('currentUser');
+        token = null;
+        currentUser = null;
+        diaries = [];
+        authModal.classList.add('active');
+        setupAuthEventListeners();
+    });
 }
 
 // 关闭详情侧边栏
@@ -130,17 +280,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// 事件监听
-sendBtn.addEventListener('click', sendDiary);
-
-// 回车键发送（Shift+Enter换行）
-diaryInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendDiary();
-    }
-});
-
 // 输入框自动高度调整
 diaryInput.addEventListener('input', () => {
     diaryInput.style.height = 'auto';
@@ -166,3 +305,17 @@ window.addEventListener('keydown', (e) => {
         closeDetailSidebar();
     }
 });
+
+// 在setupAppEventListeners中添加应用事件监听器
+function setupAppEventListeners() {
+    // 发送日记按钮点击
+    sendBtn.addEventListener('click', sendDiary);
+    
+    // 回车键发送（Shift+Enter换行）
+    diaryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendDiary();
+        }
+    });
+}
