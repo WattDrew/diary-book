@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 日记列表区域 -->
+        <div class="diary-list-container">
+            <h1>我的日记</h1>
+            <div id="diaryList" class="diary-list"></div>
+        </div>
+
+        <!-- 详情侧边栏 -->
+        <div id="detailSidebar" class="detail-sidebar">
+            <div class="sidebar-header">
+                <h2>日记详情</h2>
+                <button id="closeDetail" class="close-btn">&times;</button>
+            </div>
+            <div class="sidebar-content">
+                <div id="detailDate" class="detail-date"></div>
+                <div id="detailContent" class="detail-content"></div>
+            </div>
+        </div>
+
+        <!-- 发送区域 -->
+        <div class="send-container">
+            <textarea id="diaryInput" placeholder="写下你的日记..."></textarea>
+            <button id="sendBtn" class="send-btn">发送</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
